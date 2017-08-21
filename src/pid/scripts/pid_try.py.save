@@ -1,0 +1,148 @@
+#!/usr/bin/env python
+
+#import matplotlib.pyplot as plt
+import rospy
+import time
+from pid.msg import pid_msg
+import itertools
+
+class PID():
+    def __init__(self, Kp=0.6, Ki=0.25, Kd=0.05):
+        self._Kp = Kp
+        self._Ki = Ki
+        self._Kd = Kd
+
+        self._diff = 0.0
+        self._int = 0.0
+        self._error = 0.0
+        self._desired_value = 0.0
+
+    def update(self, actual_value):
+        '''
+        :param actual_value:The value read from the sensors such as
+        the actual speed of the car.
+        :return:
+        '''
+	#print("The value of Kp,i,d are", self._Kp,self._Ki,self._Kd)
+	print("The desired value in is ", self._desired_value)
+        self._error = self._desired_value-actual_value
+	#print("The error is ", self._error)
+        p_comp = self._Kp*self._error
+        d_comp = self._Kd*(self._error-self._diff)
+        self._diff = self._error
+
+        self._int = self._int+self._error
+
+        i_comp = self._int*self._Ki
+
+        output = p_comp + d_comp + i_comp
+	#print("The output is ", output)
+        return output
+ 
+    @property
+    def desired_value(self):
+        return self._desired_value
+
+    @desired_value.setter
+    def desired_value(self, desired):
+        """
+
+        :return: desired: Set desired value to desired
+        """
+        self._desired_value = desired
+
+    @property
+    def Kp(self):
+        return self._Kp
+
+    @Kp.setter
+    def Kp(self, new_Kp):
+        self._Kp = new_Kp
+
+    @property
+    def Ki(self):
+        return self._Ki
+
+    @Ki.setter
+    def Ki(self, new_Ki):
+        self._Ki = new_Ki
+
+    @property
+    def Kd(self):
+        return self._Kd
+
+    @Kd.setter
+    def Kd(self, new_Kd):
+        self._Kd = new_Kd
+
+    @property
+    def error(self):
+        return self._error
+
+def talker(value, counter):
+    pub = rospy.Publisher('pid_val', pid_msg)
+    rospy.init_node('pid_try', anonymous=True)
+    #r = rospy.Rate(10)
+    msg = pid_msg()
+    #print(dir(msg.header.stamp))
+    msg.header.seq =  counter.next()
+    msg.header.stamp.secs = int(time.time())
+    msg.header.stamp.nsecs = time.time()-int(time.time())
+    msg.header.frame_id = "0"
+    msg.actual_accel = value
+    msg.actual_steer = value
+    msg.actual_brake = value
+    #rospy.loginfo(msg)
+    pub.publish(msg)
+    #r.sleep()
+'''
+def main():
+    counter = itertools.count()
+    a = PID()
+    actual_val = 0.0
+    actual_values = []
+    desired_values = [x+1 for x in range(3) for y in range(30)]
+    for i in range(90):
+        a.desired_value = desired_values[i]
+	print("The desired_value out is ", a._desired_value)
+        actual_values.append(actual_val)
+        actual_val = a.update(actual_val)
+	print("The actual value is {}".format(actual_val))
+        rospy.loginfo(actual_val)
+        try:
+            talker(actual_val, counter)
+	    time.sleep(2)
+        except rospy.ROSInterruptException: pass
+
+    actual_values.append(actual_val)
+    #plt.plot(actual_values)
+    #plt.plot(desired_values)
+    #plt.show()
+
+if __name__ == "__main__":
+    main()
+'''
+counter = itertools.count()
+a = PID()
+actual_val = 0.0
+actual_values = []
+desired_values = []
+[desired_values.extend([x+1]*5) for x in range(3)]
+for i in range(15):
+    a.desired_value = desired_values[i]
+    actual_values.append(actual_val
+)
+    print("The desired_value out is ", a._desired_value)
+    #print("The actual_value before is {}".format(actual_val))
+    actual_val = a.update(actual_val)
+    #print("The actual value is {}".format(actual_val))
+    #rospy.loginfo(actual_val)
+    try:
+        talker(actual_val, counter)
+	time.sleep(1)
+    except rospy.ROSInterruptException: pass
+
+actual_values.append(actual_val)
+#plt.plot(actual_values)
+#plt.plot(desired_values)
+#plt.show()

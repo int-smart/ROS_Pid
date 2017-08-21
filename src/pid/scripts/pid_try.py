@@ -1,0 +1,133 @@
+#!/usr/bin/env python
+
+import sys
+import matplotlib.pyplot as plt
+import rospy
+import time
+from pid.msg import pid_msg
+import itertools
+
+class PID(object):
+    def __init__(self, Kp=0.6, Ki=0.25, Kd=0.05):
+        self._Kp = Kp
+        self._Ki = Ki
+        self._Kd = Kd
+
+        self._diff = 0.0
+        self._int = 0.0
+        self._error = 0.0
+        self._desired_value = 0.0
+
+    def update(self, actual_value):
+        '''
+        :param actual_value:The value read from the sensors such as
+        the actual speed of the car.
+        :return:
+        '''
+        self._error = self._desired_value-actual_value
+        p_comp = self._Kp*self._error
+        d_comp = self._Kd*(self._error-self._diff)
+        self._diff = self._error
+        self._int = self._int+self._error
+        i_comp = self._int*self._Ki
+        output = p_comp + d_comp + i_comp
+        return output
+ 
+    @property
+    def desired_value(self):
+        return self._desired_value
+
+    @desired_value.setter
+    def desired_value(self, desired):
+        """
+
+        :return: desired: Set desired value to desired
+        """
+        self._desired_value = desired
+
+    @property
+    def Kp(self):
+        return self._Kp
+
+    @Kp.setter
+    def Kp(self, new_Kp):
+        self._Kp = new_Kp
+
+    @property
+    def Ki(self):
+        return self._Ki
+
+    @Ki.setter
+    def Ki(self, new_Ki):
+        self._Ki = new_Ki
+
+    @property
+    def Kd(self):
+        return self._Kd
+
+    @Kd.setter
+    def Kd(self, new_Kd):
+        self._Kd = new_Kd
+
+    @property
+    def error(self):
+        return self._error
+
+def talker(value, counter):
+    pub = rospy.Publisher('pid_val', pid_msg)
+    r = rospy.Rate(10)
+    msg = pid_msg()
+    msg.header.seq =  counter.next()
+    msg.header.stamp.secs = int(time.time())
+    msg.header.stamp.nsecs = time.time()-int(time.time())
+    msg.header.frame_id = "0"
+    msg.actual_accel = value
+    msg.actual_steer = value
+    msg.actual_brake = value
+    #rospy.loginfo(msg)
+    pub.publish(msg)
+    r.sleep()
+
+def main():
+    node_name = ""
+    counter = itertools.count()
+    a = PID()
+    rospy.init_node('default_pid_try')
+    node_name = rospy.get_name()
+    Kp_str = node_name+'/Kp'
+    Ki_str = node_name+'/Ki'
+    Kd_str = node_name+'/Kd'
+    if rospy.has_param(Kp_str):
+	Kp = rospy.get_param(Kp_str)
+	a.Kp = Kp
+    if rospy.has_param(Ki_str):
+	Ki = rospy.get_param(Ki_str)
+	a.Ki = Ki
+    if rospy.has_param(Kd_str):
+	Kd = rospy.get_param(Kd_str)
+	a.Kd = Kd
+    print("The value of Kp, Ki, Kd is ", a.Kp,a.Ki,a.Kd)
+    actual_val = 0.0
+    actual_values = []
+    desired_values = [x+1 for x in range(3) for y in range(30)]
+    for i in range(90):
+        a.desired_value = desired_values[i]
+        actual_values.append(actual_val)
+        actual_val = a.update(actual_val)
+		#print("The actual value is {}".format(actual_val))
+        #rospy.loginfo(actual_val)
+        try:
+            talker(actual_val, counter)
+            Kp_str = node_name+'/Kp'
+            print("The node name + K p is ",node_name+'/Kp')
+            time.sleep(1)
+        except rospy.ROSInterruptException: pass
+
+    actual_values.append(actual_val)
+    plt.plot(actual_values)
+    plt.plot(desired_values)
+    plt.show()
+
+if __name__ == "__main__":
+    main()
+
