@@ -1,9 +1,0 @@
-To run a new code 
-catkin_make clean
-source devel/setup.bash
-catkin_make
-source devel/setup.bash
-
-To listen to the message in terminal you need to source it first:
-source devel/setup.bash
-
