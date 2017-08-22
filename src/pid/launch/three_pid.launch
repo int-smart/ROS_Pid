@@ -4,7 +4,7 @@
     <param name="Kd" type="double" value="0.05"/>
     <param name="Ki" type="double" value="0.25"/>
   </node>
-  <node pkg="pid" type="pid_try.py" name="brake_pid" output="screen">
+<!--  <node pkg="pid" type="pid_try.py" name="brake_pid" output="screen">
     <param name="Kp" type="double" value="0.6"/>
     <param name="Kd" type="double" value="0.05"/>
     <param name="Ki" type="double" value="0.25"/>
@@ -13,5 +13,5 @@
     <param name="Kp" type="double" value="0.6"/>
     <param name="Kd" type="double" value="0.05"/>
     <param name="Ki" type="double" value="0.25"/>
-  </node>
+  </node> -->
 </launch>
